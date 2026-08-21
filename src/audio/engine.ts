@@ -1,12 +1,15 @@
 /* ============================================================
    MOTEUR AUDIO — Beneath the Mask
-   - Charge /audio/beneath-the-mask.mp3 si présent (placeholder
-     officiel clairement identifié dans src/data.ts → MP3_SRC).
-   - Sinon : synthé lo-fi jazz procédural (Web Audio API) :
-     Fm9 → Bbm9 → Ebmaj9 → Abmaj7 → Dbmaj7 → Gm7b5 → C7alt,
-     ride swing, walking bass, piano électrique, vinyle.
-   - Pluie synthétisée (nappe + gouttes + tonnerre lointain).
-   - Clics d'interface façon menu Persona.
+   Chaîne de sources (par priorité) :
+   1. YouTube IFrame → piste officielle (YOUTUBE_ID dans data.ts),
+      si l'API est accessible (en ligne).
+   2. /audio/beneath-the-mask.mp3 si présent (MP3_SRC) — 100 % local.
+   3. Synthé lo-fi jazz procédural (Web Audio API) — 100 % local :
+      Fm9 → Bbm9 → Ebmaj9 → Abmaj7 → Dbmaj7 → Gm7b5 → C7alt,
+      ride swing, walking bass, piano électrique, vinyle.
+   + Pluie synthétisée (nappe + gouttes + tonnerre lointain).
+   + Clics d'interface façon menu Persona.
+   Tout fonctionne hors-ligne grâce aux sources 2 et 3.
    ============================================================ */
 
 import { MP3_SRC, YOUTUBE_ID } from "../data";

@@ -6,7 +6,7 @@ import { useState } from "react";
 import { RECIPES, WEATHER } from "../data";
 import { engine } from "../audio/engine";
 import { prefersReduced, Scramble } from "../hooks";
-import { Icons } from "./Effects";
+import { Icons, LeblancScene } from "./Effects";
 
 /* Pluie SVG animée (SMIL — aucune CSS nécessaire) */
 function WidgetRain({ intensity }: { intensity: number }) {
@@ -95,11 +95,8 @@ export function Leblanc({ rain }: { rain: boolean }) {
           <div className="space-y-8">
             <div className="reveal p5-panel relative overflow-hidden">
               <div className="overflow-hidden">
-                <img
-                  src="https://image.qwenlm.ai/generated-images/d3984ec5-e685-4a93-8435-ae31f87e5cf9/_result.png"
-                  alt="L'intérieur chaleureux du Café Leblanc, un soir de pluie"
-                  className="kenburns h-72 w-full object-cover sm:h-96"
-                />
+                {/* Illustration vectorielle embarquée — aucun asset externe */}
+                <LeblancScene className="kenburns h-72 w-full sm:h-96" />
               </div>
               <div className="absolute inset-x-0 bottom-0 flex items-end justify-between bg-gradient-to-t from-black via-black/60 to-transparent p-5 pt-16">
                 <div>

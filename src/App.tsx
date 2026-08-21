@@ -85,10 +85,12 @@ function Footer() {
               « Beneath the Mask » © Shoji Meguro / Lyn Inaizumi / ATLUS —
               Persona 5. Paroles : extrait à des fins de démonstration.
               <br />
-              Audio : lecteur prévu pour{" "}
-              <code className="text-[var(--p5-red)]">public/audio/beneath-the-mask.mp3</code>{" "}
-              (placeholder) ; à défaut, un moteur lo-fi jazz est synthétisé en
-              direct via la Web Audio API.
+              Audio : piste officielle via YouTube si en ligne ; sinon votre
+              fichier <code className="text-[var(--p5-red)]">public/audio/beneath-the-mask.mp3</code> ;
+              sinon un moteur lo-fi jazz synthétisé en direct (Web Audio API).
+              <br />
+              ★ Polices, visuels et moteur audio embarqués : le site
+              fonctionne 100 % hors-ligne.
             </p>
           </div>
         </div>
