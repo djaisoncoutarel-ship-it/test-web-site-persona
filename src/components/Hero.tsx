@@ -3,18 +3,15 @@
    ============================================================ */
 import { TICKER_ITEMS } from "../data";
 import { engine } from "../audio/engine";
-import { Icons, MaskLogo } from "./Effects";
+import { Icons, MaskLogo, RainyStreetScene } from "./Effects";
 
 export function Hero({ onEnter }: { onEnter: () => void }) {
   return (
     <header id="metaverse" className="relative min-h-[100svh] overflow-hidden bg-black">
-      {/* Fond : pluie de nuit à Shibuya, duotone rouge/noir */}
+      {/* Fond : pluie de nuit à Shibuya — scène vectorielle 100 % locale,
+          animée en direct par le canvas de pluie */}
       <div className="absolute inset-0">
-        <img
-          src="https://image.qwenlm.ai/generated-images/4576576c-9042-47d9-8f40-ff16f5b34bb5/_result.png"
-          alt="Silhouette masquée sous la pluie, néons rouges sur asphalte mouillé"
-          className="kenburns h-full w-full object-cover opacity-70"
-        />
+        <RainyStreetScene className="kenburns h-full w-full opacity-80" />
         <div
           className="absolute inset-0"
           style={{

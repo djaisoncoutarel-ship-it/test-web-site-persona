@@ -39,6 +39,17 @@ body {
   color: var(--p5-white);
 }
 
+/* Vapeur qui s'élève (scène Leblanc) */
+@keyframes steam-rise {
+  0% { opacity: 0; transform: translateY(8px); }
+  35% { opacity: 0.65; }
+  100% { opacity: 0; transform: translateY(-16px); }
+}
+.steam {
+  animation: steam-rise 3.2s ease-in-out infinite;
+  transform-box: fill-box;
+}
+
 .no-scrollbar { scrollbar-width: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 
