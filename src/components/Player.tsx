@@ -63,17 +63,19 @@ export function Player({ p }: { p: PlayerAPI }) {
                 Lyn Inaizumi — Shoji Meguro
                 <span
                   className={`clip-tag px-2 py-px font-display text-[9px] tracking-widest ${
-                    state.mode === "mp3"
-                      ? "bg-white text-black"
-                      : "bg-[var(--p5-steel)] text-[var(--p5-red)]"
+                    state.mode === "synth"
+                      ? "bg-[var(--p5-steel)] text-[var(--p5-red)]"
+                      : "bg-white text-black"
                   }`}
                   title={
-                    state.mode === "synth"
-                      ? "Mode démo : déposez votre fichier dans public/audio/beneath-the-mask.mp3"
-                      : "Lecture du fichier MP3"
+                    state.mode === "yt"
+                      ? "Piste officielle Beneath the Mask — lue via l'API YouTube IFrame"
+                      : state.mode === "mp3"
+                        ? "Lecture du fichier public/audio/beneath-the-mask.mp3"
+                        : "Mode démo lo-fi (YouTube ou MP3 indisponible)"
                   }
                 >
-                  {state.mode === "mp3" ? "MP3" : "SYNTH"}
+                  {state.mode === "yt" ? "YouTube" : state.mode === "mp3" ? "MP3" : "SYNTH"}
                 </span>
               </p>
             </div>
@@ -113,7 +115,11 @@ export function Player({ p }: { p: PlayerAPI }) {
             <div className="mt-1 flex justify-between font-type text-[10px] uppercase tracking-widest text-white/45">
               <span>{fmt(pos.current)}</span>
               <span className="hidden text-white/30 sm:inline">
-                {state.mode === "synth" ? "boucle lo-fi générée en direct — Web Audio API" : "fichier audio.mp3"}
+                {state.mode === "yt"
+                  ? "piste officielle Beneath the Mask — lecture YouTube"
+                  : state.mode === "mp3"
+                    ? "fichier public/audio/beneath-the-mask.mp3"
+                    : "boucle lo-fi générée en direct — Web Audio API"}
               </span>
               <span>{fmt(pos.total)}</span>
             </div>

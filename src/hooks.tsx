@@ -2,7 +2,7 @@
    Hooks & petits composants partagés
    ============================================================ */
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { engine, LOOP_TOTAL, type Position } from "./audio/engine";
+import { engine, LOOP_TOTAL, type Position, type SourceMode } from "./audio/engine";
 
 export const prefersReduced = () =>
   typeof window !== "undefined" &&
@@ -103,7 +103,7 @@ export interface PlayerState {
   loop: boolean;
   rain: boolean;
   volume: number;
-  mode: "mp3" | "synth";
+  mode: SourceMode;
   mp3Ready: boolean;
 }
 

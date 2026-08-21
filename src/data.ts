@@ -248,5 +248,9 @@ export const TICKER_ITEMS = [
 
 /* Emplacement audio officiel : déposez votre fichier dans
    public/audio/beneath-the-mask.mp3 — le lecteur le chargera
-   automatiquement ; sinon, un moteur synthé lo-fi jazz prend le relais. */
+   automatiquement. Priorité des sources : YouTube > MP3 > synthé. */
 export const MP3_SRC = "/audio/beneath-the-mask.mp3";
+
+/* Piste officielle Beneath the Mask (Lyn Inaizumi) — lue via
+   l'API YouTube IFrame, contrôlée entièrement par le lecteur P5. */
+export const YOUTUBE_ID = "SlUYv-CUoOo";

@@ -9,9 +9,9 @@
    - Clics d'interface façon menu Persona.
    ============================================================ */
 
-import { MP3_SRC } from "../data";
+import { MP3_SRC, YOUTUBE_ID } from "../data";
 
-export type SourceMode = "mp3" | "synth";
+export type SourceMode = "yt" | "mp3" | "synth";
 
 export interface Position {
   current: number;
@@ -41,6 +41,17 @@ const midi = (m: number) => 440 * Math.pow(2, (m - 69) / 12);
 
 type Ctx = AudioContext;
 
+/* Sous-ensemble de l'API YouTube IFrame réellement utilisé */
+interface YTPlayerLike {
+  playVideo(): void;
+  pauseVideo(): void;
+  seekTo(seconds: number, allowSeekAhead: boolean): void;
+  setVolume(v: number): void;
+  getCurrentTime(): number;
+  getDuration(): number;
+  getPlayerState(): number;
+}
+
 class AudioEngine {
   private ctx: Ctx | null = null;
   private master!: GainNode;
@@ -64,6 +75,13 @@ class AudioEngine {
   private gridStart = 0;
   private synthOffset = 0;
   private rainCleanup: (() => void) | null = null;
+
+  /* ---------- Source YouTube (piste officielle) ---------- */
+  private yt: YTPlayerLike | null = null;
+  private ytInitStarted = false;
+  ytReady = false;
+  private ytPos: Position = { current: 0, total: 0 };
+  private ytPoller: number | null = null;
 
   /* ---------- Initialisation (au premier geste utilisateur) ---------- */
   ensureCtx(): Ctx {
@@ -112,6 +130,9 @@ class AudioEngine {
     });
     this.audio = audio;
 
+    /* Source prioritaire : la piste officielle sur YouTube */
+    this.initYoutube();
+
     return ctx;
   }
 
@@ -144,7 +165,19 @@ class AudioEngine {
   play() {
     const ctx = this.ensureCtx();
     if (ctx.state === "suspended") void ctx.resume();
-    if (this.mode === "mp3" && this.mp3Ready && this.audio) {
+    if (this.ytReady && this.yt) {
+      /* Source n°1 : la piste officielle YouTube */
+      this.stopScheduler();
+      this.musicBus.gain.setTargetAtTime(0.0001, ctx.currentTime, 0.04);
+      if (this.audio && !this.audio.paused) this.audio.pause();
+      try {
+        this.yt.playVideo();
+      } catch {
+        this.mode = "synth";
+        this.startSynth();
+      }
+      this.mode = "yt";
+    } else if (this.mode === "mp3" && this.mp3Ready && this.audio) {
       this.stopScheduler();
       this.audio.loop = this.loop;
       this.audio.play().catch(() => {
@@ -160,6 +193,13 @@ class AudioEngine {
 
   pause() {
     this.playing = false;
+    if (this.ytReady && this.yt && this.mode === "yt") {
+      try {
+        this.yt.pauseVideo();
+      } catch {
+        /* ignore */
+      }
+    }
     if (this.audio && this.mode === "mp3") this.audio.pause();
     this.stopScheduler();
     if (this.ctx) {
@@ -181,10 +221,26 @@ class AudioEngine {
     this.volume = Math.min(1, Math.max(0, v));
     if (this.master) this.master.gain.value = this.volume;
     if (this.audio) this.audio.volume = this.volume;
+    if (this.ytReady && this.yt) {
+      try {
+        this.yt.setVolume(Math.round(this.volume * 100));
+      } catch {
+        /* ignore */
+      }
+    }
   }
 
   seek(frac: number) {
     const f = Math.min(0.999, Math.max(0, frac));
+    if (this.mode === "yt" && this.ytReady && this.yt && this.ytPos.total > 1) {
+      try {
+        this.yt.seekTo(f * this.ytPos.total, true);
+        this.ytPos = { ...this.ytPos, current: f * this.ytPos.total };
+      } catch {
+        /* ignore */
+      }
+      return;
+    }
     if (this.mode === "mp3" && this.audio && this.audio.duration) {
       this.audio.currentTime = f * this.audio.duration;
       return;
@@ -199,6 +255,9 @@ class AudioEngine {
   }
 
   getPosition(): Position {
+    if (this.mode === "yt" && this.ytReady) {
+      return this.ytPos;
+    }
     if (this.mode === "mp3" && this.audio && this.audio.duration) {
       return { current: this.audio.currentTime, total: this.audio.duration };
     }
@@ -206,6 +265,108 @@ class AudioEngine {
       current: this.started ? this.synthOffset : 0,
       total: LOOP_TOTAL,
     };
+  }
+
+  /* ---------- Source YouTube (Beneath the Mask — piste officielle) ----------
+     L'iframe est montée hors écran : le lecteur P5 garde la main sur
+     play/pause/seek/volume/boucle via l'API YouTube IFrame. */
+  private initYoutube() {
+    if (this.ytInitStarted) return;
+    this.ytInitStarted = true;
+    const w = window as unknown as {
+      YT?: { Player: new (el: string, cfg: unknown) => YTPlayerLike };
+      onYouTubeIframeAPIReady?: () => void;
+    };
+
+    const create = () => {
+      try {
+        const host = document.createElement("div");
+        host.style.cssText =
+          "position:fixed;left:-9999px;top:0;width:1px;height:1px;overflow:hidden;pointer-events:none;opacity:0;";
+        const mount = document.createElement("div");
+        mount.id = "yt-p5-player";
+        host.appendChild(mount);
+        document.body.appendChild(host);
+
+        this.yt = new w.YT!.Player("yt-p5-player", {
+          videoId: YOUTUBE_ID,
+          width: 1,
+          height: 1,
+          playerVars: {
+            autoplay: 0,
+            controls: 0,
+            disablekb: 1,
+            playsinline: 1,
+            rel: 0,
+            iv_load_policy: 3,
+            modestbranding: 1,
+          },
+          events: {
+            onReady: () => {
+              this.ytReady = true;
+              try {
+                this.yt?.setVolume(Math.round(this.volume * 100));
+              } catch {
+                /* ignore */
+              }
+              /* Le vrai titre remplace le synthé dès que possible */
+              if (!this.playing) this.mode = "yt";
+              if (this.ytPoller === null) {
+                this.ytPoller = window.setInterval(() => this.pollYt(), 300);
+              }
+            },
+            onStateChange: (e: { data: number }) => {
+              if (e.data === 0 /* ENDED */) {
+                if (this.loop && this.yt) {
+                  this.yt.seekTo(0, true);
+                  this.yt.playVideo();
+                } else {
+                  this.playing = false;
+                }
+              }
+            },
+            onError: () => {
+              /* Vidéo indisponible → repli transparent sur le synthé */
+              this.ytReady = false;
+              if (this.mode === "yt") {
+                this.mode = "synth";
+                if (this.playing) this.startSynth();
+              }
+            },
+          },
+        });
+      } catch {
+        this.ytReady = false;
+      }
+    };
+
+    if (w.YT && w.YT.Player) {
+      create();
+      return;
+    }
+    const prev = w.onYouTubeIframeAPIReady;
+    w.onYouTubeIframeAPIReady = () => {
+      prev?.();
+      create();
+    };
+    const s = document.createElement("script");
+    s.src = "https://www.youtube.com/iframe_api";
+    s.async = true;
+    s.onerror = () => {
+      /* hors-ligne : le synthé lo-fi reste la source */
+    };
+    document.head.appendChild(s);
+  }
+
+  private pollYt() {
+    if (!this.yt || !this.ytReady) return;
+    try {
+      const total = this.yt.getDuration() || 0;
+      const current = this.yt.getCurrentTime() || 0;
+      this.ytPos = { current, total: total || 1 };
+    } catch {
+      /* ignore */
+    }
   }
 
   /* ---------- Séquenceur synthé ---------- */
